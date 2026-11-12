@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { sendeMailMitAnhang, type Rechnung, type Unternehmen, type MailSendenRequest } from '../api/client'
+import { ersetzeAnredeUndLeistungen } from '../utils/mailPlatzhalter'
 
 type DokumentTyp = 'Rechnung' | 'Angebot' | 'Proforma' | 'Auftrag'
 
@@ -18,14 +19,18 @@ function platzhalterErsetzen(vorlage: string, dok: Rechnung, unternehmen: Untern
   const kunde = dok.kunde_name ?? dok.partner_freitext ?? ''
   const firma = unternehmen?.firmenname ?? ''
 
-  return vorlage
-    .replace(/\{rechnungsnummer\}/g, dok.rechnungsnummer ?? '—')
-    .replace(/\{datum\}/g, datum)
-    .replace(/\{betrag\}/g, brutto)
-    .replace(/\{faellig_am\}/g, faellig)
-    .replace(/\{gueltig_bis\}/g, gueltig)
-    .replace(/\{kunde\}/g, kunde)
-    .replace(/\{firmenname\}/g, firma)
+  return ersetzeAnredeUndLeistungen(
+    vorlage
+      .replace(/\{rechnungsnummer\}/g, dok.rechnungsnummer ?? '—')
+      .replace(/\{datum\}/g, datum)
+      .replace(/\{betrag\}/g, brutto)
+      .replace(/\{faellig_am\}/g, faellig)
+      .replace(/\{gueltig_bis\}/g, gueltig)
+      .replace(/\{kunde\}/g, kunde)
+      .replace(/\{firmenname\}/g, firma),
+    dok,
+    unternehmen,
+  )
 }
 
 const DEFAULT_BETREFF: Record<DokumentTyp, string> = {
@@ -36,10 +41,10 @@ const DEFAULT_BETREFF: Record<DokumentTyp, string> = {
 }
 
 const DEFAULT_TEXT: Record<DokumentTyp, string> = {
-  Rechnung: 'Guten Tag {kunde},\n\nanbei erhalten Sie unsere Rechnung {rechnungsnummer} vom {datum} über {betrag} €.\n\nZahlungsziel: {faellig_am}\n\nMit freundlichen Grüßen\n{firmenname}',
-  Angebot:  'Guten Tag {kunde},\n\nanbei finden Sie unser Angebot {rechnungsnummer} vom {datum} über {betrag} €.\n\nGültig bis: {gueltig_bis}\n\nMit freundlichen Grüßen\n{firmenname}',
-  Proforma: 'Guten Tag {kunde},\n\nanbei erhalten Sie unsere Proforma-Rechnung {rechnungsnummer} vom {datum} über {betrag} €.\n\nBitte begleichen Sie den Betrag bis zum {faellig_am}.\n\nMit freundlichen Grüßen\n{firmenname}',
-  Auftrag:  'Guten Tag {kunde},\n\nvielen Dank für Ihren Auftrag. Anbei finden Sie Ihre Auftragsbestätigung {rechnungsnummer} vom {datum} über {betrag} €.\n\nMit freundlichen Grüßen\n{firmenname}',
+  Rechnung: '{anrede}\n\nanbei erhalten Sie die Rechnung {rechnungsnummer} vom {datum} über {betrag} € für folgende Leistungen:\n\n{leistungen}\n\nBitte überweisen Sie den Betrag bis zum {faellig_am}. Die Bankverbindung finden Sie auf der Rechnung.\n\nMit freundlichen Grüßen\n{firmenname}',
+  Angebot:  '{anrede}\n\nanbei finden Sie unser Angebot {rechnungsnummer} vom {datum} über {betrag} € für folgende Leistungen:\n\n{leistungen}\n\nDas Angebot ist gültig bis {gueltig_bis}.\n\nMit freundlichen Grüßen\n{firmenname}',
+  Proforma: '{anrede}\n\nanbei erhalten Sie unsere Proforma-Rechnung {rechnungsnummer} vom {datum} über {betrag} € für folgende Leistungen:\n\n{leistungen}\n\nBitte begleichen Sie den Betrag bis zum {faellig_am}.\n\nMit freundlichen Grüßen\n{firmenname}',
+  Auftrag:  '{anrede}\n\nvielen Dank für Ihren Auftrag. Anbei finden Sie Ihre Auftragsbestätigung {rechnungsnummer} vom {datum} über {betrag} € für folgende Leistungen:\n\n{leistungen}\n\nMit freundlichen Grüßen\n{firmenname}',
 }
 
 function getVorlage(typ: DokumentTyp, u: Unternehmen | null | undefined): { betreff: string; text: string } {
