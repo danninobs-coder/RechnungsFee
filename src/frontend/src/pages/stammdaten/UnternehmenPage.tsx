@@ -1371,6 +1371,8 @@ const PLATZHALTER = [
   { key: '{faellig_am}',      desc: 'Fälligkeitsdatum' },
   { key: '{gueltig_bis}',     desc: 'Gültig bis (Angebot)' },
   { key: '{kunde}',           desc: 'Name des Empfängers' },
+  { key: '{anrede}',          desc: 'Anrede wie im PDF (Kunde, sonst Firmeneinstellung, sonst „Sehr geehrte Damen und Herren,“)' },
+  { key: '{leistungen}',      desc: 'Liste der abgerechneten Positionen (ohne Rabatte)' },
   { key: '{firmenname}',      desc: 'Dein Firmenname' },
 ]
 
