@@ -424,8 +424,15 @@ def generate_zugferd_pdf(rechnung, unternehmen: dict) -> bytes:
     from utils.pdf_rechnung import generate_rechnung_pdf
 
     # sRGB-OutputIntent für PDF/A-3-Konformität
-    pdf_bytes = generate_rechnung_pdf(rechnung, unternehmen, ist_kopie=False, ist_entwurf=False,
-                                      mit_output_intent=True)
+    if int(unternehmen.get("pdf_vorlage") or 0) == 2:
+        # Vorlage 2 (Navy & Amber) ist für Unternehmen mit USt gedacht und damit E-Rechnung-tauglich;
+        # Vorlage 1 ist reine Kleinunternehmer-Vorlage und erzeugt keine ZUGFeRD-Rechnungen.
+        from utils.pdf_rechnung_vorlage2 import generate_rechnung_pdf_vorlage2
+        pdf_bytes = generate_rechnung_pdf_vorlage2(rechnung, unternehmen, ist_kopie=False, ist_entwurf=False,
+                                                   ist_netto=True, mit_output_intent=True)
+    else:
+        pdf_bytes = generate_rechnung_pdf(rechnung, unternehmen, ist_kopie=False, ist_entwurf=False,
+                                          mit_output_intent=True)
     xml_bytes = generate_zugferd_xml(rechnung, unternehmen)
 
     # XRechnung-Profil in facturx registrieren (einmalig; idempotent)

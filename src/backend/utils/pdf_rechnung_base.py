@@ -295,6 +295,7 @@ def _adresszeilen(obj) -> list[str]:
 # ---------------------------------------------------------------------------
 
 class RechnungPDFBase(FPDF):
+    _unterschrift_im_schlusstext = False   # Vorlage 2 setzt die Unterschrift selbst in den Schlusstext
 
     _faellig_label      = "Fällig bis"
     _ln_nach_positionen = 3
@@ -907,7 +908,7 @@ class RechnungPDFBase(FPDF):
         self._render_notizen()
         if ist_lieferschein:
             self._render_empfangsbestaetigung()
-        elif not ist_storno_rnd:
+        elif not ist_storno_rnd and not self._unterschrift_im_schlusstext:
             embed_unterschrift(self, self._unt, L_MARGIN)
         self.set_text_color(0, 0, 0)
         return bytes(self.output())

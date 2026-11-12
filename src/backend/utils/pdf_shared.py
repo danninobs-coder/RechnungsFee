@@ -20,6 +20,16 @@ def embed_unterschrift(pdf, unt: dict, x: float, w: float = 50, h: float = 18) -
     try:
         raw = b64.split(",", 1)[-1]
         img_bytes = base64.b64decode(raw)
+        # Seitenverhältnis wahren: in die Box w x h einpassen (früher wurde auf w x h gestaucht)
+        try:
+            from PIL import Image
+            with Image.open(BytesIO(img_bytes)) as _im:
+                bw, bh = _im.size
+            if bw and bh:
+                faktor = min(w / bw, h / bh)
+                w, h = bw * faktor, bh * faktor
+        except Exception:
+            pass
         pdf.ln(6)
         pdf.image(BytesIO(img_bytes), x=x, y=pdf.get_y(), w=w, h=h)
         pdf.ln(h + 2)
