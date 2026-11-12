@@ -17,6 +17,7 @@ from database.connection import Base
 from database.models import Kunde, Lieferant, Rechnung, Rechnungsposition
 from utils.pdf_rechnung import generate_rechnung_pdf
 from utils.pdf_rechnung_vorlage1 import generate_rechnung_pdf_vorlage1
+from utils.pdf_rechnung_vorlage2 import generate_rechnung_pdf_vorlage2
 
 UNT_DICT = {
     "firmenname": "Test GmbH", "vorname": "", "nachname": "",
@@ -65,7 +66,7 @@ def _rechnung(db, typ: str, **felder) -> Rechnung:
     return rechnung
 
 
-@pytest.mark.parametrize("erzeuge", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1])
+@pytest.mark.parametrize("erzeuge", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1, generate_rechnung_pdf_vorlage2])
 def test_eingangsrechnung_ohne_standardtexte_und_anrede(db, erzeuge):
     text = _pdf_text(erzeuge(_rechnung(db, "eingang"), UNT_DICT))
     assert "STANDARD-EINLEITUNG" not in text
@@ -74,7 +75,7 @@ def test_eingangsrechnung_ohne_standardtexte_und_anrede(db, erzeuge):
     assert "Vielen Dank für Dein Vertrauen" not in text
 
 
-@pytest.mark.parametrize("erzeuge", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1])
+@pytest.mark.parametrize("erzeuge", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1, generate_rechnung_pdf_vorlage2])
 def test_ausgangsrechnung_behaelt_standardtexte_und_anrede(db, erzeuge):
     text = _pdf_text(erzeuge(_rechnung(db, "ausgang"), UNT_DICT))
     assert "STANDARD-EINLEITUNG" in text

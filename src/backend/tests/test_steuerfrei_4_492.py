@@ -29,6 +29,7 @@ from database.models import Journaleintrag, Kategorie, Kunde, Nummernkreis, Rech
 from utils.elster import build_ustva_xml
 from utils.pdf_rechnung import generate_rechnung_pdf
 from utils.pdf_rechnung_vorlage1 import generate_rechnung_pdf_vorlage1
+from utils.pdf_rechnung_vorlage2 import generate_rechnung_pdf_vorlage2
 from utils.zugferd import generate_zugferd_xml
 
 import json
@@ -162,7 +163,7 @@ def _unt_dict(db) -> dict:
     return json.loads(_absender_snapshot(db))
 
 
-@pytest.mark.parametrize("erzeuge", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1])
+@pytest.mark.parametrize("erzeuge", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1, generate_rechnung_pdf_vorlage2])
 def test_pdf_hinweis_statt_paragraf_19(db, erzeuge):
     unt = db.query(Unternehmen).one()
     unt.ist_kleinunternehmer = True

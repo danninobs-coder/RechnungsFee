@@ -23,6 +23,7 @@ from database.connection import Base
 from database.models import Kunde, Rechnung, Rechnungsposition
 from utils.pdf_rechnung import generate_rechnung_pdf
 from utils.pdf_rechnung_vorlage1 import generate_rechnung_pdf_vorlage1
+from utils.pdf_rechnung_vorlage2 import generate_rechnung_pdf_vorlage2
 from utils.pdf_rechnung_base import _ust_aufschluesselung
 
 
@@ -82,6 +83,13 @@ def test_vorlage0_zeigt_nachkommastelle_in_positionszeile(db):
 def test_vorlage1_zeigt_nachkommastelle_in_positionszeile(db):
     rechnung = _rechnung_mit_satz(db, "7.8", "0.08")
     text = _pdf_text(generate_rechnung_pdf_vorlage1(rechnung, UNT_DICT))
+    assert "7,8 %" in text
+    assert "7 %" not in text
+
+
+def test_vorlage2_zeigt_nachkommastelle_im_summenblock(db):
+    rechnung = _rechnung_mit_satz(db, "7.8", "0.08")
+    text = _pdf_text(generate_rechnung_pdf_vorlage2(rechnung, UNT_DICT))
     assert "7,8 %" in text
     assert "7 %" not in text
 

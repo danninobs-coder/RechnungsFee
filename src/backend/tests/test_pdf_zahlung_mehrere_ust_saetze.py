@@ -20,6 +20,7 @@ from database.connection import Base
 from database.models import Journaleintrag, Kunde, Rechnung, Rechnungsposition
 from utils.pdf_rechnung import generate_rechnung_pdf
 from utils.pdf_rechnung_vorlage1 import generate_rechnung_pdf_vorlage1
+from utils.pdf_rechnung_vorlage2 import generate_rechnung_pdf_vorlage2
 
 
 @pytest.fixture
@@ -95,6 +96,14 @@ def test_vorlage0_zeigt_vollen_betrag_nicht_teilbetrag(db):
 def test_vorlage1_zeigt_vollen_betrag_nicht_teilbetrag(db):
     rechnung = _voll_bezahlte_rechnung_mit_zwei_saetzen(db)
     text = _pdf_text(generate_rechnung_pdf_vorlage1(rechnung, UNT_DICT))
+    assert "Teilbetrag" not in text
+    assert "Dankend erhalten am" in text
+    assert "2,00" in text
+
+
+def test_vorlage2_zeigt_vollen_betrag_nicht_teilbetrag(db):
+    rechnung = _voll_bezahlte_rechnung_mit_zwei_saetzen(db)
+    text = _pdf_text(generate_rechnung_pdf_vorlage2(rechnung, UNT_DICT))
     assert "Teilbetrag" not in text
     assert "Dankend erhalten am" in text
     assert "2,00" in text

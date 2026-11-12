@@ -21,6 +21,7 @@ from database.connection import Base
 from database.models import Kunde, Rechnung, Rechnungsposition
 from utils.pdf_rechnung import generate_rechnung_pdf
 from utils.pdf_rechnung_vorlage1 import generate_rechnung_pdf_vorlage1
+from utils.pdf_rechnung_vorlage2 import generate_rechnung_pdf_vorlage2
 
 
 @pytest.fixture
@@ -67,7 +68,7 @@ def _rechnung(db, dokument_typ: str, storniert: bool = False) -> Rechnung:
 
 
 @pytest.mark.parametrize("dokument_typ", ["Rechnung", "Angebot", "Proforma", "Auftrag", "Gutschrift", "Abschlagsrechnung"])
-@pytest.mark.parametrize("generate", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1])
+@pytest.mark.parametrize("generate", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1, generate_rechnung_pdf_vorlage2])
 def test_unterschrift_erscheint_in_allen_vertragsrelevanten_dokumenten(db, dokument_typ, generate):
     rechnung = _rechnung(db, dokument_typ)
     with patch("utils.pdf_rechnung_base.embed_unterschrift") as mock_embed:
@@ -75,7 +76,7 @@ def test_unterschrift_erscheint_in_allen_vertragsrelevanten_dokumenten(db, dokum
     mock_embed.assert_called_once()
 
 
-@pytest.mark.parametrize("generate", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1])
+@pytest.mark.parametrize("generate", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1, generate_rechnung_pdf_vorlage2])
 def test_unterschrift_fehlt_weiterhin_bei_lieferschein(db, generate):
     rechnung = _rechnung(db, "Lieferschein")
     with patch("utils.pdf_rechnung_base.embed_unterschrift") as mock_embed:
@@ -83,7 +84,7 @@ def test_unterschrift_fehlt_weiterhin_bei_lieferschein(db, generate):
     mock_embed.assert_not_called()
 
 
-@pytest.mark.parametrize("generate", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1])
+@pytest.mark.parametrize("generate", [generate_rechnung_pdf, generate_rechnung_pdf_vorlage1, generate_rechnung_pdf_vorlage2])
 def test_unterschrift_fehlt_weiterhin_bei_stornorechnung(db, generate):
     rechnung = _rechnung(db, "Rechnung", storniert=True)
     with patch("utils.pdf_rechnung_base.embed_unterschrift") as mock_embed:
