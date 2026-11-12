@@ -14,6 +14,7 @@ from database.connection import get_db
 from database.models import Unternehmen
 from utils.pdf_rechnung import generate_rechnung_pdf
 from utils.pdf_rechnung_vorlage1 import generate_rechnung_pdf_vorlage1
+from utils.pdf_rechnung_vorlage2 import generate_rechnung_pdf_vorlage2
 
 router = APIRouter(prefix="/api/pdf-vorlagen", tags=["PDF-Vorlagen"])
 
@@ -28,6 +29,11 @@ VORLAGEN = [
         "id": 1,
         "name": "Sandra grün – Nur für Kleinunternehmer",
         "beschreibung": "Nur für Kleinunternehmer (§ 19 UStG) · Grünes Design · Spalten: Datum, Beschreibung, Saldo · Überweisungsblock mit IBAN",
+    },
+    {
+        "id": 2,
+        "name": "Baubotters – Navy & Amber",
+        "beschreibung": "Navy-Kopfband mit Amber-Akzent · Spalten: Pos., Leistung, Menge, Einzelpreis, Netto · Endbetrag auf Amber-Fläche · für alle Unternehmensformen",
     },
 ]
 
@@ -51,7 +57,7 @@ def _demo_rechnung(unt: dict) -> Any:
     pos3 = SimpleNamespace(
         position_nr=3,
         beschreibung="Technischer Support (3 Stunden)", menge=Decimal("3"), einheit="Std",
-        netto=Decimal("180.00"), ust_satz=Decimal("0" if unt.get("ist_kleinunternehmer") else "19"),
+        netto=Decimal("60.00"), ust_satz=Decimal("0" if unt.get("ist_kleinunternehmer") else "19"),
         ust_betrag=Decimal("0" if unt.get("ist_kleinunternehmer") else "34.20"),
         brutto=Decimal("180.00" if unt.get("ist_kleinunternehmer") else "214.20"),
     )
@@ -151,6 +157,9 @@ def demo_pdf(vorlage: int = 0, db: Session = Depends(get_db)):
 
     if vorlage == 1:
         pdf_bytes = generate_rechnung_pdf_vorlage1(rechnung, unt_dict, ist_kopie=False)
+    elif vorlage == 2:
+        pdf_bytes = generate_rechnung_pdf_vorlage2(rechnung, unt_dict, ist_kopie=False,
+                                                   ist_netto=not unt_dict.get("ist_kleinunternehmer"))
     else:
         pdf_bytes = generate_rechnung_pdf(rechnung, unt_dict, ist_kopie=False)
 

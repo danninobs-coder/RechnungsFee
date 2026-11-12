@@ -22,6 +22,7 @@ from database.connection import get_db, APP_DATA_DIR
 from database.models import Unternehmen, Rechnung, DokumentenPaket, KundeLieferadresse
 from utils.pdf_rechnung import generate_rechnung_pdf
 from utils.pdf_rechnung_vorlage1 import generate_rechnung_pdf_vorlage1
+from utils.pdf_rechnung_vorlage2 import generate_rechnung_pdf_vorlage2
 from utils.zugferd import generate_zugferd_pdf
 from utils.pdf_kopie import speichere_original_pdf, lade_original_mit_kopie_stempel
 from utils.mail_tls import (
@@ -127,6 +128,8 @@ def _pdf_bytes_fuer(rechnung_id: int, db: Session) -> tuple[bytes, str, Optional
             pdf_bytes = generate_rechnung_pdf(r, unt_dict, ist_entwurf=r.ist_entwurf, ist_netto=ist_netto)
     elif u and u.pdf_vorlage == 1:
         pdf_bytes = generate_rechnung_pdf_vorlage1(r, unt_dict, ist_entwurf=r.ist_entwurf, ist_netto=ist_netto)
+    elif u and u.pdf_vorlage == 2:
+        pdf_bytes = generate_rechnung_pdf_vorlage2(r, unt_dict, ist_entwurf=r.ist_entwurf, ist_netto=ist_netto)
     else:
         pdf_bytes = generate_rechnung_pdf(r, unt_dict, ist_entwurf=r.ist_entwurf, ist_netto=ist_netto)
 

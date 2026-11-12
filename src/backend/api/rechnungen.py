@@ -34,6 +34,7 @@ from utils.vorsteuer_soll import CUTOVER_DATUM as CUTOVER_DATUM_VORSTEUER
 from utils.mahngebuehr_verrechnung import offene_mahngebuehr_summe, verrechne_mahngebuehren
 from utils.pdf_rechnung import generate_rechnung_pdf
 from utils.pdf_rechnung_vorlage1 import generate_rechnung_pdf_vorlage1
+from utils.pdf_rechnung_vorlage2 import generate_rechnung_pdf_vorlage2
 from utils.zugferd import generate_zugferd_pdf
 from utils.rechnungs_parser import analysiere_datei
 from utils.pdf_kopie import speichere_original_pdf, lade_original_mit_kopie_stempel
@@ -2436,6 +2437,8 @@ def rechnung_als_pdf(rechnung_id: int, vorlage: int = -1, download: bool = False
         vorlage_nr = vorlage if vorlage >= 0 else int(unt_dict.get("pdf_vorlage") or 0)
         if vorlage_nr == 1:
             pdf_bytes = generate_rechnung_pdf_vorlage1(rechnung, unt_dict, ist_kopie=False, ist_entwurf=ist_entwurf, ist_netto=ist_netto)
+        elif vorlage_nr == 2:
+            pdf_bytes = generate_rechnung_pdf_vorlage2(rechnung, unt_dict, ist_kopie=False, ist_entwurf=ist_entwurf, ist_netto=ist_netto)
         else:
             pdf_bytes = generate_rechnung_pdf(rechnung, unt_dict, ist_kopie=False, ist_entwurf=ist_entwurf, ist_netto=ist_netto)
 
