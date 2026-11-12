@@ -68,6 +68,7 @@ pyinstaller \
     --hidden-import utils.pdf_tagesabschluss \
     --hidden-import utils.pdf_rechnung \
     --hidden-import utils.pdf_rechnung_vorlage1 \
+    --hidden-import utils.pdf_rechnung_vorlage2 \
     --hidden-import utils.pdf_shared \
     --hidden-import utils.signatur \
     --hidden-import utils.zugferd \
