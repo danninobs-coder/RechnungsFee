@@ -390,7 +390,8 @@ class RechnungPDFVorlage2(RechnungPDFBase):
             if von[-4:] == bis[-4:]:
                 von = von[:-4]          # „30.10. – 05.11.2026“
             zeilen.append(("Leistungszeitraum", f"{von} – {bis}"))
-        elif r.leistung_von and str(r.leistung_von) != str(r.datum):
+        elif r.leistung_von:
+            # Auch bei gleichem Datum wie die Rechnung ausweisen (Pflichtangabe § 14 UStG)
             zeilen.append(("Leistungsdatum", _iso_zu_de(str(r.leistung_von))))
 
         if getattr(r, "kunden_bestellnummer", None):
@@ -695,15 +696,20 @@ class RechnungPDFVorlage2(RechnungPDFBase):
         endlabel = _SUMMEN_LABEL.get(dt, "Gesamtbetrag")
         endwert = _eur(r.brutto_gesamt * s)
 
-        breite = 92.0
+        # Zahlungshinweis + QR stehen links neben den Summen (spart eine halbe Seite Höhe).
+        zahlung = self._zahlung_vorbereiten() if self._zahlung_neben_summen() else None
+        breite = 84.0 if zahlung else 92.0
         x = PAGE_W - R_MARGIN - breite
         zeile_h, end_h = 6.4, 10.0
         gesamt_h = zeile_h * len(zeilen) + end_h
-        if self.get_y() + gesamt_h > self.page_break_trigger:
+        links_w = NUTZ_W - breite - 6.0
+        zahlung_h = self._zahlung_hoehe(zahlung[0], zahlung[1], links_w) if zahlung else 0.0
+        if self.get_y() + max(gesamt_h, zahlung_h) > self.page_break_trigger:
             self.add_page()
         self.ln(1)
 
         y = self.get_y()
+        y_start = y
         for label, wert, stil in zeilen:
             farbe = GRAU if stil == "g" else NAVY
             fett = "B" if stil == "f" else ""
@@ -719,17 +725,36 @@ class RechnungPDFVorlage2(RechnungPDFBase):
         self._text(x + PAD + 0.5, y, breite * 0.5, end_h, endlabel, size=10.5, style="B", farbe=NAVY)
         self._text(x + breite * 0.45, y, breite * 0.55 - PAD - 0.5, end_h, endwert, align="R", size=11.5,
                    style="B", farbe=NAVY, min_size=8)
-        self.set_xy(L_MARGIN, y + end_h)
+        y_ende = y + end_h
+        if zahlung:
+            self._zahlung_zeichnen(zahlung[0], zahlung[1], L_MARGIN, y_start, links_w)
+            self._zahlung_gerendert = True
+            y_ende = max(y_ende, y_start + zahlung_h)
+        self.set_xy(L_MARGIN, y_ende)
+
+    def _zahlung_neben_summen(self) -> bool:
+        """Gleiche Bedingungen wie der Aufruf von _render_zahlungsblock() in der Basisklasse."""
+        r = self._r
+        dt = self._dok_typ()
+        if dt in ("Lieferschein", "Angebot", "Auftrag"):
+            return False
+        if getattr(r, "storniert", False) and dt == "Rechnung":
+            return False
+        return True
 
     # -------------------------------------------------------------------------
     # Zahlungsblock
     # -------------------------------------------------------------------------
 
-    def _render_zahlungsblock(self):
+    _QR_W = 26.0
+    _zahlung_gerendert = False
+
+    def _zahlung_vorbereiten(self):
+        """Absätze (Markdown) und optionaler EPC-QR des Zahlungsblocks, oder None, wenn nichts zu zeigen ist."""
         r = self._r
         unt = self._unt
         if r.typ != "ausgang":
-            return
+            return None
         dt = self._dok_typ()
         iban = unt.get("iban") or ""
         bic = unt.get("bic") or ""
@@ -784,37 +809,53 @@ class RechnungPDFVorlage2(RechnungPDFBase):
             absaetze.append(f"Bei Zahlung bis {_iso_zu_de(str(sk_frist))} gewähren wir {Decimal(str(sk_proz)):.4g} % Skonto: "
                             f"Zahlbetrag {_eur(r.brutto_gesamt - sk_betrag)}.")
         if not absaetze:
-            return
+            return None
 
         qr = None
         if unt.get("qr_zahlung_aktiv", False) and iban and status not in ("bezahlt", "teilweise") and not ist_gutschrift:
             qr = epc_qr_bytes(iban, bic, self._firmenname(), float(r.brutto_gesamt), r.rechnungsnummer or "")
-        qr_w = 26.0
-        text_w = NUTZ_W - (qr_w + 6 if qr else 0)
+        return absaetze, qr
 
+    def _zahlung_hoehe(self, absaetze, qr, breite: float) -> float:
+        """Höhe des Zahlungsblocks (mm) bei der gegebenen Gesamtbreite (Text links, QR rechts)."""
+        text_w = breite - (self._QR_W + 6 if qr else 0)
         self.set_font("DejaVu", "", 8.5)
         text_h = sum(
             len(self.multi_cell(text_w, 4.7, a, dry_run=True, output="LINES", markdown=True, align="L")) * 4.7 + 1.6
             for a in absaetze
         )
-        block_h = max(text_h, qr_w + 6 if qr else 0)
-        if self.get_y() + block_h > self.page_break_trigger:
-            self.add_page()
-        y = self.get_y()
-        self.set_xy(L_MARGIN, y)
+        return max(text_h, self._QR_W + 6 if qr else 0)
+
+    def _zahlung_zeichnen(self, absaetze, qr, x: float, y: float, breite: float):
+        """Zeichnet Text und QR ab (x, y); der Cursor steht danach unter dem Block."""
+        qr_w = self._QR_W
+        text_w = breite - (qr_w + 6 if qr else 0)
+        self.set_xy(x, y)
         self.set_text_color(*TEXT_MITTEL)
         for a in absaetze:
-            self.set_x(L_MARGIN)
+            self.set_x(x)
             self.set_font("DejaVu", "", 8.5)
-            self.multi_cell(text_w, 4.7, a, markdown=True, new_x="LMARGIN", new_y="NEXT", align="L")
+            self.multi_cell(text_w, 4.7, a, markdown=True, new_x="LEFT", new_y="NEXT", align="L")
             self.ln(1.6)
         if qr:
-            qx = L_MARGIN + NUTZ_W - qr_w
+            qx = x + breite - qr_w
             self.image(BytesIO(qr), x=qx, y=y, w=qr_w, h=qr_w)
             self._text(qx - 3, y + qr_w + 0.5, qr_w + 6, 3.5, "Per Banking-App zahlen", align="C",
                        size=6, farbe=GRAU, min_size=5)
             self.set_y(max(self.get_y(), y + qr_w + 5))
         self.set_text_color(0, 0, 0)
+
+    def _render_zahlungsblock(self):
+        if self._zahlung_gerendert:      # steht schon neben den Summen
+            return
+        daten = self._zahlung_vorbereiten()
+        if not daten:
+            return
+        absaetze, qr = daten
+        block_h = self._zahlung_hoehe(absaetze, qr, NUTZ_W)
+        if self.get_y() + block_h > self.page_break_trigger:
+            self.add_page()
+        self._zahlung_zeichnen(absaetze, qr, L_MARGIN, self.get_y(), NUTZ_W)
 
     def _schlusstext_layout(self) -> tuple[float, float, float]:
         return 2, L_MARGIN, NUTZ_W
