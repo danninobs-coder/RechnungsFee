@@ -1427,6 +1427,11 @@ export type Rechnung = {
   kunde_id: number | null
   kunde_name: string | null
   kunde_email: string | null
+  kunde_anrede?: string | null
+  kunde_anrede_individuell?: string | null
+  kunde_vorname?: string | null
+  kunde_nachname?: string | null
+  kunde_firmenname?: string | null
   kunde_zugferd_aktiv: boolean
   lieferant_id: number | null
   lieferant_name: string | null
