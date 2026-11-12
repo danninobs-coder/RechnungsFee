@@ -336,6 +336,12 @@ class RechnungResponse(BaseModel):
     kunde_id: Optional[int]
     kunde_name: Optional[str] = None
     kunde_email: Optional[str] = None
+    # Anrede-Daten des Kunden für Mailvorlagen ({anrede}); gleiche Quelle wie die PDF-Anrede
+    kunde_anrede: Optional[str] = None
+    kunde_anrede_individuell: Optional[str] = None
+    kunde_vorname: Optional[str] = None
+    kunde_nachname: Optional[str] = None
+    kunde_firmenname: Optional[str] = None
     kunde_zugferd_aktiv: bool = False
     lieferant_id: Optional[int]
     lieferant_name: Optional[str] = None
@@ -461,6 +467,11 @@ class RechnungResponse(BaseModel):
             parts = [obj.kunde.firmenname or "", obj.kunde.vorname or "", obj.kunde.nachname or ""]
             data.kunde_name = " ".join(p for p in parts if p) or None
             data.kunde_email = obj.kunde.email
+            data.kunde_anrede = obj.kunde.anrede
+            data.kunde_anrede_individuell = obj.kunde.anrede_individuell
+            data.kunde_vorname = obj.kunde.vorname
+            data.kunde_nachname = obj.kunde.nachname
+            data.kunde_firmenname = obj.kunde.firmenname
             data.kunde_zugferd_aktiv = bool(getattr(obj.kunde, "zugferd_aktiv", False))
         if obj.lieferant:
             parts = [obj.lieferant.firmenname or "", obj.lieferant.vorname or "", obj.lieferant.nachname or ""]
