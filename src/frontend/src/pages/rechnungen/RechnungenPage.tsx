@@ -32,6 +32,7 @@ import { KundeErstellenModal } from '../../components/KundeErstellenModal'
 import { ArtikelFormModal } from '../artikel/ArtikelPage'
 import { ArtikelAutocomplete } from '../../components/ArtikelAutocomplete'
 import { MailDialog } from '../../components/MailDialog'
+import { ersetzeAnredeUndLeistungen } from '../../utils/mailPlatzhalter'
 import { ThunderbirdInstallHinweis } from '../../components/ThunderbirdInstallHinweis'
 import { sendeUeberThunderbird, ThunderbirdNichtGefundenError, paketAnhaenge } from '../../utils/thunderbirdVersand'
 import { PaketMailtoWarnung } from '../../components/PaketMailtoWarnung'
@@ -1428,13 +1429,17 @@ function RechnungDetail({
     const firmenname = unternehmen?.firmenname ?? 'RechnungsFee'
 
     function ersetze(vorlage: string): string {
-      return vorlage
-        .replace(/\{rechnungsnummer\}/g, rechnung.rechnungsnummer ?? '—')
-        .replace(/\{datum\}/g, datumDe)
-        .replace(/\{betrag\}/g, formatEuro(rechnung.brutto_gesamt))
-        .replace(/\{faellig_am\}/g, faelligDe)
-        .replace(/\{kunde\}/g, kundeName)
-        .replace(/\{firmenname\}/g, firmenname)
+      return ersetzeAnredeUndLeistungen(
+        vorlage
+          .replace(/\{rechnungsnummer\}/g, rechnung.rechnungsnummer ?? '—')
+          .replace(/\{datum\}/g, datumDe)
+          .replace(/\{betrag\}/g, formatEuro(rechnung.brutto_gesamt))
+          .replace(/\{faellig_am\}/g, faelligDe)
+          .replace(/\{kunde\}/g, kundeName)
+          .replace(/\{firmenname\}/g, firmenname),
+        rechnung,
+        unternehmen,
+      )
     }
 
     const betreffVorlage = unternehmen?.mail_betreff_vorlage ?? 'Rechnung {rechnungsnummer}'
