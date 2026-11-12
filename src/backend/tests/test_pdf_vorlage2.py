@@ -142,7 +142,7 @@ def test_zahlungshinweis_mit_faelligkeit_und_nummer(db):
 
 def test_eigener_zahlungshinweis_mit_platzhaltern(db):
     unt = {**UNT, "zahlungshinweis_text": "Bitte {betrag} bis {faellig_am} auf {iban} zahlen ({rechnungsnummer})."}
-    text = _text(generate_rechnung_pdf_vorlage2(_rechnung(db), unt))
+    text = " ".join(_text(generate_rechnung_pdf_vorlage2(_rechnung(db), unt)).split())   # Zeilenumbrüche der schmalen Spalte egal
     assert "Bitte 2.320,50 € bis 24.11.2026 auf DE89 3704 0044 0532 0130 00 zahlen (RE-2026-0001)." in text
 
 
@@ -359,3 +359,26 @@ def test_zugferd_mit_vorlage_2(db):
     assert "RECHNUNG" in _kompakt(reader.pages[0].extract_text())
     assert "Rechnungsbetrag" in reader.pages[-1].extract_text()
     assert any(name.endswith(".xml") for name in reader.attachments), list(reader.attachments)
+
+
+# --- Leistungsdatum und Layout der Zahlung neben den Summen ------------------------------------
+
+def test_leistungsdatum_wird_auch_bei_gleichem_datum_gezeigt(db):
+    r = _rechnung(db, leistung_von=date(2026, 11, 10), leistung_bis=None)
+    text = " ".join(_text(generate_rechnung_pdf_vorlage2(r, UNT)).split())
+    assert "Leistungsdatum 10.11.2026" in text
+
+
+def test_zahlung_und_qr_stehen_neben_den_summen_und_halten_die_rechnung_auf_einer_seite(db):
+    unt = {**UNT, "qr_zahlung_aktiv": True, "berufsbezeichnung": "Gründer & Geschäftsführer"}
+    r = _rechnung(
+        db,
+        einleitungstext="# Exposé Weinheim\n## Haus 8.2\n\nvielen Dank für den Auftrag. Ich stelle folgende Leistungen in Rechnung:",
+        schlusstext="Abgerechnet wird der kalkulierte Aufwand.\n\nVielen Dank für Ihren Auftrag.\n\n**Daniel Nobs**",
+    )
+    pdf = generate_rechnung_pdf_vorlage2(r, unt)
+    assert len(PdfReader(BytesIO(pdf)).pages) == 1
+    text = " ".join(_text(pdf).split())
+    assert "Per Banking-App zahlen" in text
+    assert "Bitte überweisen Sie den Rechnungsbetrag bis zum 24.11.2026" in text
+    assert "Rechnungsbetrag 2.320,50 €" in text
